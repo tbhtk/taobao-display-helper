@@ -1,10 +1,12 @@
 // ==UserScript==
-// @name                淘寶顯示助手【雙11版】
-// @name:en-US          Taobao Display Helper (1111)
+// @name                淘寶助手
+// @name:en-US          Taobao Helper
 // @namespace           http://tbhtk.ru
 // @version             0.1
 // @license             MIT
 // @description         【淘寶搜尋頁】1. 雙11顯示「店鋪紅包」圖示 2. 顯示所有雙11圖示
+// @icon                https://www.tbhtk.ru/static/favicon.png
+// @icon64              https://www.tbhtk.ru/static/favicon.png
 // @author              熊之淘寶谷
 // @homepage            http://tbhtk.ru
 
