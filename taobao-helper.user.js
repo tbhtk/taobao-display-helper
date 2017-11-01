@@ -4,7 +4,7 @@
 // @namespace           http://tbhtk.ru
 // @version             0.1
 // @license             MIT
-// @description         【淘寶搜尋頁】1. 雙11顯示「店鋪紅包」圖示 2. 顯示所有雙11圖示
+// @description         【淘寶搜尋頁】1. Desktop版顯示雙11「店鋪紅包」圖示  2. 不需要Mouse Over顯示所有雙11圖示（店鋪紅包及滿減等）
 // @icon                https://www.tbhtk.ru/static/favicon.png
 // @icon64              https://www.tbhtk.ru/static/favicon.png
 // @author              熊之淘寶谷
