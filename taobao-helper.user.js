@@ -1,11 +1,11 @@
 // ==UserScript==
-// @name                淘寶助手 DEV
+// @name                淘寶助手
 // @name:en             Taobao Helper
 // @namespace           http://tbhtk.ru
-// @version             0.2.0
+// @version             0.2.2
 // @license             MIT
-// @description         【淘寶搜尋頁】1. 提前顯示雙11「店鋪紅包」圖示  2. 以不同顏色顥示各種圖示 3. 雙11優惠篩選列（淘寶店） 4. 不需要Mouse Over顯示所有雙11圖示（店鋪紅包及滿減等）
-// @description:en        Please check Chinese version
+// @description         【淘寶搜尋頁】1. 提前顯示雙11「店鋪紅包」圖示 2. 雙11優惠篩選列（淘寶店） 3. 分類顯示各種圖示 4. 不需要Mouse Over顯示所有雙11圖示（店鋪紅包及滿減等）
+// @description:en       Please check Chinese version
 // @icon                https://www.tbhtk.ru/static/favicon.png
 // @icon64              https://www.tbhtk.ru/static/favicon.png
 // @author              熊之淘寶谷
