@@ -1,10 +1,10 @@
 // ==UserScript==
-// @name                淘寶助手
+// @name                淘寶助手 DEV
 // @name:en             Taobao Helper
 // @namespace           http://tbhtk.ru
-// @version             0.1.6
+// @version             0.2.0
 // @license             MIT
-// @description         【淘寶搜尋頁】1. 提前顯示雙11「店鋪紅包」圖示  2. 以不同顏色顥示各種圖示 3. 不需要Mouse Over顯示所有雙11圖示（店鋪紅包及滿減等）
+// @description         【淘寶搜尋頁】1. 提前顯示雙11「店鋪紅包」圖示  2. 以不同顏色顥示各種圖示 3. 雙11優惠篩選列（淘寶店） 4. 不需要Mouse Over顯示所有雙11圖示（店鋪紅包及滿減等）
 // @description:en        Please check Chinese version
 // @icon                https://www.tbhtk.ru/static/favicon.png
 // @icon64              https://www.tbhtk.ru/static/favicon.png
@@ -15,6 +15,7 @@
 // @match               http://s.taobao.com/search?*
 
 // @run-at              document-start
+// @require             https://code.jquery.com/jquery-3.2.1.slim.min.js
 // @grant               GM_setValue
 // @grant               GM_getValue
 // @grant               GM_addStyle
@@ -26,20 +27,30 @@
 var is_show_shop_pocket = true; // 顯示「店鋪紅包」圖示
 var is_show_all_1111_labels = true; // 顯示所有雙11圖示
 var is_change_label_color = true; // 調整圖示顏色
+var is_enable_custom_filter_bar = true; // 開啟雙11篩選列
 
 /*=================
  * Main
  *=================*/
-(function() {
-    "use strict";
+jQuery.noConflict();
+window.console = window.console || {
+    log: function () {},
+    error: function () {},
+    warn: function () {}
+};
 
+var itemListTo = null;
+var itemFilter = [];
+
+function addStyles() {
+    // Overrides Styles
     if (is_show_shop_pocket) {
         GM_addStyle(
             ".icon-fest-2017taobaodianpuhong { background: url(https://img.alicdn.com/tfs/TB1D5hoab_I8KJjy1XaXXbsxpXa-407-396.png);   background-repeat: no-repeat; display: inline-block; background-position: -151px -304px;  width: 70px;  height: 16px; -webkit-filter: hue-rotate(300deg); }"
         );
     }
 
-    if (is_change_label_color){
+    if (is_change_label_color) {
         GM_addStyle(".icon-fest-jianianhuamanjian1{ -webkit-filter: hue-rotate(5deg); }");
         GM_addStyle(".icon-fest-jianianhuamanjian2{ -webkit-filter: hue-rotate(20deg);}");
         GM_addStyle(".icon-fest-jianianhuamanjian3{ -webkit-filter: hue-rotate(35deg);}");
@@ -60,4 +71,139 @@ var is_change_label_color = true; // 調整圖示顏色
         GM_addStyle('.m-itemlist .grid .row-4, .m-itemlist .icon-has-more { overflow: visible !important}');
         GM_addStyle(".m-itemlist .grid .icon { margin-top: 0px !important; }");
     }
+
+
+    // Custom Styles
+    GM_addStyle(
+        ".custom-filter-disabled, item-disabled { -webkit-filter:grayscale(100%); filter: grayscale(100%); }"
+    );
+    GM_addStyle(
+        ".m-itemlist  .items  .item-ad.item-disabled, .item-disabled { display: none !important }"
+    );
+}
+
+function addCustomFilterRow() {
+    var row = jQuery('<div></div>');
+    row.addClass("filter-row");
+    row.addClass("filter-row-custom");
+    jQuery('.m-sortbar').append(row);
+
+    let list = [];
+    list.push('icon-fest-2017taobaodianpuhong');
+    list.push('icon-fest-jianianhuamanjian1');
+    list.push('icon-fest-jianianhuamanjian2');
+    list.push('icon-fest-jianianhuamanjian3');
+    for (let i = 0; i < list.length; i += 1) {
+        let filterName = list[i];
+        row.append('<a class="filter icon-tag toggle-filter" data-filter-name="' + filterName + '" title="篩選此類活動">' +
+            '<span class="img ' + filterName + '"></span>' +
+            '</a>');
+    }
+
+    // Reset Filter Icons
+    jQuery.each(jQuery('.toggle-filter'), function (key, el) {
+        var filterName = jQuery(el).data('filterName');
+        if (jQuery.inArray(filterName, itemFilter) === -1) {
+            jQuery(el).addClass('custom-filter-disabled');
+        }
+    });
+
+    // Attach Events
+    const toggleFilter = function (e) {
+        var filterName = jQuery(this).data('filterName');
+        if (jQuery.inArray(filterName, itemFilter) !== -1) {
+            // Remove (Disabled) Filter
+            jQuery(this).addClass('custom-filter-disabled');
+            itemFilter.splice(jQuery.inArray(filterName, itemFilter), 1);
+        } else {
+            // Add Filter
+            jQuery(this).removeClass('custom-filter-disabled');
+            itemFilter.push(filterName);
+        }
+
+        // Apply Filter
+        applyItemFilter();
+    };
+    jQuery('.toggle-filter').on('click', toggleFilter);
+}
+
+function applyItemFilter() {
+    var items = jQuery('#mainsrp-itemlist .items .item');
+    jQuery.each(items, function (key, item) {
+        let matched = true;
+        if (itemFilter.length === 0) {
+            matched = true;
+        } else {
+            matched = false;
+
+            for (let i = 0; i < itemFilter.length; i += 1) {
+                let filterName = itemFilter[i];
+                // Filter By Tag
+                if (jQuery(item).find('span.' + filterName).length > 0) {
+                    matched = true;
+                }
+            }
+        }
+
+        if (matched) {
+            jQuery(item).show();
+            jQuery(this).removeClass('item-disabled');
+        } else {
+            // jQuery(this).removeClass('item-ad');
+            jQuery(item).hide();
+            jQuery(this).addClass('item-disabled');
+        }
+    });
+}
+
+function itemListChanged() {
+    var items = jQuery('#mainsrp-itemlist .items .item');
+
+    if (items.length > 0 && jQuery('.m-sortbar .filter-row').length > 0) {
+        // Add Custom Filter Row
+        if (jQuery('.filter-row-custom').length === 0) {
+            addCustomFilterRow();
+        }
+    }
+    applyItemFilter();
+}
+
+
+function addObserver() {
+    var MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
+
+    if (!MutationObserver) {
+        console.warn("MutationObserver not supported");
+        return;
+    }
+
+    var cb = function (records) {
+        // addCustomFilterRow();
+        clearTimeout(itemListTo);
+        itemListTo = setTimeout(function () {
+            itemListChanged();
+        }, 200);
+    };
+
+    var observer = new MutationObserver(cb);
+    var config = {
+        'childList': true,
+        'subtree': true,
+        'attributes': true,
+        'attributeFilter': ['mainsrp-itemlist']
+    };
+    observer.observe(document, config);
+}
+
+(function () {
+    "use strict";
+
+    addStyles();
+
+    if (is_enable_custom_filter_bar) {
+        try {
+            addObserver();
+        } catch (e) {}
+    }
+
 })();
