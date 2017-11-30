@@ -2,10 +2,10 @@
 // @name                淘寶助手
 // @name:en             Taobao Helper
 // @namespace           http://tbhtk.ru
-// @version             0.2.2
+// @version             0.2.4
 // @license             MIT
-// @description         【淘寶搜尋頁】1. 提前顯示雙11「店鋪紅包」圖示 2. 雙11優惠篩選列（淘寶店） 3. 分類顯示各種圖示 4. 不需要Mouse Over顯示所有雙11圖示（店鋪紅包及滿減等）
-// @description:en       Please check Chinese version
+// @description         ***1212再見***【淘寶搜尋頁】1. 提前顯示雙11「店鋪紅包」圖示 2. 雙11優惠篩選列（淘寶店） 3. 分類顯示各種圖示 4. 不需要Mouse Over顯示所有雙11圖示（店鋪紅包及滿減等）
+// @description:en      Please check Chinese version
 // @icon                https://www.tbhtk.ru/static/favicon.png
 // @icon64              https://www.tbhtk.ru/static/favicon.png
 // @author              熊之淘寶谷
@@ -96,8 +96,8 @@ function addCustomFilterRow() {
     for (let i = 0; i < list.length; i += 1) {
         let filterName = list[i];
         row.append('<a class="filter icon-tag toggle-filter" data-filter-name="' + filterName + '" title="篩選此類活動">' +
-            '<span class="img ' + filterName + '"></span>' +
-            '</a>');
+                   '<span class="img ' + filterName + '"></span>' +
+                   '</a>');
     }
 
     // Reset Filter Icons
@@ -148,6 +148,10 @@ function applyItemFilter() {
         if (matched) {
             jQuery(item).show();
             jQuery(this).removeClass('item-disabled');
+
+            jQuery.each(jQuery(item).find('img[data-ks-lazyload]'), function (key, el) {
+                jQuery(el).attr('src',jQuery(el).attr('data-ks-lazyload'));
+            });
         } else {
             // jQuery(this).removeClass('item-ad');
             jQuery(item).hide();
@@ -202,7 +206,7 @@ function addObserver() {
 
     if (is_enable_custom_filter_bar) {
         try {
-            addObserver();
+           addObserver();
         } catch (e) {}
     }
 
