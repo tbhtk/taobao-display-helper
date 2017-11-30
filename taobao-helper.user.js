@@ -2,9 +2,9 @@
 // @name                淘寶助手
 // @name:en             Taobao Helper
 // @namespace           http://tbhtk.ru
-// @version             0.2.4
+// @version             0.2.6
 // @license             MIT
-// @description         ***1212再見***【淘寶搜尋頁】1. 提前顯示雙11「店鋪紅包」圖示 2. 雙11優惠篩選列（淘寶店） 3. 分類顯示各種圖示 4. 不需要Mouse Over顯示所有雙11圖示（店鋪紅包及滿減等）
+// @description         【淘寶搜尋頁】1. 雙12優惠篩選列（淘寶店） 2. 沒有符合篩選時自動下一頁 3. 分類顯示各種圖示 4. 不需要Mouse Over顯示所有圖示（店鋪紅包及滿減等）
 // @description:en      Please check Chinese version
 // @icon                https://www.tbhtk.ru/static/favicon.png
 // @icon64              https://www.tbhtk.ru/static/favicon.png
@@ -25,9 +25,10 @@
  * Settings
  *=================*/
 var is_show_shop_pocket = true; // 顯示「店鋪紅包」圖示
-var is_show_all_1111_labels = true; // 顯示所有雙11圖示
+var is_show_all_labels = true; // 顯示所有雙11圖示
 var is_change_label_color = true; // 調整圖示顏色
 var is_enable_custom_filter_bar = true; // 開啟雙11篩選列
+var auto_next_page = false;
 
 /*=================
  * Main
@@ -44,19 +45,19 @@ var itemFilter = [];
 
 function addStyles() {
     // Overrides Styles
-    if (is_show_shop_pocket) {
-        GM_addStyle(
-            ".icon-fest-2017taobaodianpuhong { background: url(https://img.alicdn.com/tfs/TB1D5hoab_I8KJjy1XaXXbsxpXa-407-396.png);   background-repeat: no-repeat; display: inline-block; background-position: -151px -304px;  width: 70px;  height: 16px; -webkit-filter: hue-rotate(300deg); }"
-        );
-    }
+    // if (is_show_shop_pocket) {
+    //     GM_addStyle(
+    //         ".icon-fest-2017taobaodianpuhong { background: url(https://img.alicdn.com/tfs/TB1D5hoab_I8KJjy1XaXXbsxpXa-407-396.png);   background-repeat: no-repeat; display: inline-block; background-position: -151px -304px;  width: 70px;  height: 16px; -webkit-filter: hue-rotate(300deg); }"
+    //     );
+    // }
 
     if (is_change_label_color) {
-        GM_addStyle(".icon-fest-jianianhuamanjian1{ -webkit-filter: hue-rotate(5deg); }");
-        GM_addStyle(".icon-fest-jianianhuamanjian2{ -webkit-filter: hue-rotate(20deg);}");
-        GM_addStyle(".icon-fest-jianianhuamanjian3{ -webkit-filter: hue-rotate(35deg);}");
+        GM_addStyle(".icon-fest-manjian1{ -webkit-filter: hue-rotate(15deg); }");
+        GM_addStyle(".icon-fest-manjian2{ -webkit-filter: hue-rotate(60deg);}");
+        GM_addStyle(".icon-fest-manjian3{ -webkit-filter: hue-rotate(105deg);}");
     }
 
-    if (is_show_all_1111_labels) {
+    if (is_show_all_labels) {
         // .item-ctx-hover
         GM_addStyle(".m-itemlist .grid .item { height: 376px !important; margin-bottom: -16px }");
         GM_addStyle(
@@ -80,24 +81,29 @@ function addStyles() {
     GM_addStyle(
         ".m-itemlist  .items  .item-ad.item-disabled, .item-disabled { display: none !important }"
     );
+    GM_addStyle(
+        ".toggle-auto-next-page.icon-hover { color: red !important; font-weight: bold}"
+    )
 }
 
 function addCustomFilterRow() {
     var row = jQuery('<div></div>');
     row.addClass("filter-row");
     row.addClass("filter-row-custom");
-    jQuery('.m-sortbar').append(row);
+    // jQuery('.m-sortbar').after(row);
+    jQuery('.m-sortbar').after(row);
+    row.insertAfter( ".m-sortbar .sort-row" );
 
     let list = [];
-    list.push('icon-fest-2017taobaodianpuhong');
-    list.push('icon-fest-jianianhuamanjian1');
-    list.push('icon-fest-jianianhuamanjian2');
-    list.push('icon-fest-jianianhuamanjian3');
+    list.push('icon-fest-dianpuhongbao5');
+    list.push('icon-fest-manjian1');
+    list.push('icon-fest-manjian2');
+    list.push('icon-fest-manjian3');
     for (let i = 0; i < list.length; i += 1) {
         let filterName = list[i];
         row.append('<a class="filter icon-tag toggle-filter" data-filter-name="' + filterName + '" title="篩選此類活動">' +
-                   '<span class="img ' + filterName + '"></span>' +
-                   '</a>');
+            '<span class="img ' + filterName + '"></span>' +
+            '</a>');
     }
 
     // Reset Filter Icons
@@ -125,10 +131,29 @@ function addCustomFilterRow() {
         applyItemFilter();
     };
     jQuery('.toggle-filter').on('click', toggleFilter);
+
+    row.append('<a class="toggle-auto-next-page filter icon-tag" title="沒有符合時，自動下一頁">' +
+        '<span class="icon icon-btn-check-big"></span>' +
+        '<span class="text">自動下一頁</span>' +
+        '</a>');
+    if (auto_next_page) {
+        jQuery('.toggle-auto-next-page').addClass('icon-hover');
+    }
+    jQuery('.toggle-auto-next-page').on('click', function (e) {
+        auto_next_page = !auto_next_page;
+        if (auto_next_page) {
+            jQuery(this).addClass('icon-hover');
+            applyItemFilter();
+        } else {
+            jQuery(this).removeClass('icon-hover');
+        }
+    });
 }
 
 function applyItemFilter() {
     var items = jQuery('#mainsrp-itemlist .items .item');
+
+    var filtered = 0;
     jQuery.each(items, function (key, item) {
         let matched = true;
         if (itemFilter.length === 0) {
@@ -146,11 +171,12 @@ function applyItemFilter() {
         }
 
         if (matched) {
+            filtered += 1;
             jQuery(item).show();
             jQuery(this).removeClass('item-disabled');
 
             jQuery.each(jQuery(item).find('img[data-ks-lazyload]'), function (key, el) {
-                jQuery(el).attr('src',jQuery(el).attr('data-ks-lazyload'));
+                jQuery(el).attr('src', jQuery(el).attr('data-ks-lazyload'));
             });
         } else {
             // jQuery(this).removeClass('item-ad');
@@ -158,6 +184,13 @@ function applyItemFilter() {
             jQuery(this).addClass('item-disabled');
         }
     });
+
+    console.log(filtered);
+    console.log(auto_next_page);
+    if (auto_next_page && filtered === 0) {
+        console.log(jQuery('a[trace="srp_select_pagedown"]'));
+        jQuery('a[trace="srp_select_pagedown"]')[0].click();
+    }
 }
 
 function itemListChanged() {
@@ -206,7 +239,7 @@ function addObserver() {
 
     if (is_enable_custom_filter_bar) {
         try {
-           addObserver();
+            addObserver();
         } catch (e) {}
     }
 
